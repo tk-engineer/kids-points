@@ -2,7 +2,7 @@
   'use strict';
 
   // 🔴 版を あげるときは sw.js の CACHE（kids-points-v◯）と いっしょに かえる
-  var VERSION = 'v3';
+  var VERSION = 'v4';
   var app = document.getElementById('app');
   var KEY = 'pc-data';
 
@@ -68,6 +68,8 @@
   function total() { return D.entries.reduce(function (s, e) { return s + (e.status === 'ok' ? e.pts : 0); }, 0); }
   function pendingPts() { return D.entries.reduce(function (s, e) { return s + (e.status === 'wait' ? e.pts : 0); }, 0); }
   function rewardPts(r) { return Math.ceil(r.yen / (D.yenPerPoint || 1)); }
+  // ポイントを おかねに なおす（おかねの かんかくを つけるため、こどもの がめんに ならべて だす）
+  function yen(n) { return (n * (D.yenPerPoint || 1)).toLocaleString() + 'えん'; }
   function actPts(a, step) { return a.per ? Math.floor(step / a.per) * a.pts : step * a.pts; }
 
   // ---------- こどもの がめん ----------
@@ -81,7 +83,8 @@
       h('div', { class: 'panel total' }, [
         h('div', { class: 'lbl', text: 'いまの ポイント' }),
         h('div', { class: 'num', html: tot + '<small>ポイント</small>' }),
-        wait ? h('div', { class: 'wait', text: '⏳ OK まち ' + wait + ' ポイント' }) : null,
+        h('div', { class: 'yen', html: '＝ <b>' + yen(tot) + '</b> ぶん<small>（1ポイント ＝ ' + yen(1) + '）</small>' }),
+        wait ? h('div', { class: 'wait', text: '⏳ OK まち ' + wait + ' ポイント（' + yen(wait) + ' ぶん）' }) : null,
       ]),
       goal ? goalPanel(goal, tot) : null,
       h('div', { class: 'acts' }, D.acts.map(function (a) {
@@ -112,9 +115,9 @@
     return h('div', { class: 'panel goal' }, [
       h('div', { class: 'ic', text: goal.icon }),
       h('div', { class: 'body' }, [
-        h('div', { class: 'nm', text: '🎯 ' + goal.name }),
+        h('div', { class: 'nm', html: '🎯 ' + esc(goal.name) + ' <span class="price">' + goal.yen.toLocaleString() + 'えん</span>' }),
         h('div', { class: 'bar' }, [h('i', { style: 'width:' + pct + '%' })]),
-        h('div', { class: 'rest', html: tot >= need ? '🎉 こうかん できるよ！ おうちのひとに いってね' : 'あと <b>' + (need - tot) + '</b> ポイント（' + tot + ' / ' + need + '）' }),
+        h('div', { class: 'rest', html: tot >= need ? '🎉 こうかん できるよ！ おうちのひとに いってね' : 'あと <b>' + (need - tot) + '</b> ポイント（あと ' + yen(need - tot) + ' ぶん）<br><small>' + tot + ' / ' + need + ' ポイント ＝ ' + yen(tot) + ' / ' + goal.yen.toLocaleString() + 'えん</small>' }),
       ]),
     ]);
   }
@@ -260,7 +263,7 @@
     confetti();
     var m = modal([
       h('div', { class: 'big', text: '🎉' }),
-      h('div', { class: 'q', html: 'やったね！<br><span style="font-size:44px;color:var(--gold-d)">+' + sum + ' ポイント</span><br>もらえたよ' }),
+      h('div', { class: 'q', html: 'やったね！<br><span style="font-size:44px;color:var(--gold-d)">+' + sum + ' ポイント</span><br>（' + yen(sum) + ' ぶん）<br>もらえたよ' }),
       h('button', { class: 'btn go wide', text: 'うれしい！', onclick: function () { m.close(); } }),
     ]);
   }
