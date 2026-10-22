@@ -2,7 +2,7 @@
   'use strict';
 
   // 🔴 版を あげるときは sw.js の CACHE（kids-points-v◯）と いっしょに かえる
-  var VERSION = 'v1';
+  var VERSION = 'v2';
   var app = document.getElementById('app');
   var KEY = 'pc-data';
 
