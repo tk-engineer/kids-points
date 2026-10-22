@@ -1,6 +1,6 @@
 // 一度ひらけば、ネットが無くても動くように全部を保存しておく
 // 🔴 版を あげるときは app.js の VERSION と いっしょに かえる
-var CACHE = 'kids-points-v2';
+var CACHE = 'kids-points-v3';
 var FILES = ['./', 'index.html', 'app.js', 'manifest.json', 'icon-180.png', 'icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {

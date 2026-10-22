@@ -122,6 +122,28 @@ input { font: inherit; color: inherit; -webkit-user-select: text; user-select: t
 .field label { font-size: 16px; color: var(--sub); }
 .note { color: var(--sub); font-size: 15px; text-align: center; margin-top: 12px; }
 
+.choices.days { grid-template-columns: repeat(4, 1fr); }
+.choices.days .choice { font-size: 20px; padding: 12px 4px; }
+.choices.days small { font-size: 14px; color: var(--sub); font-weight: 700; }
+.datein { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+
+/* カレンダー */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cal-m { font-size: 26px; font-weight: 800; text-align: center; }
+.cal-m small { font-size: 16px; color: var(--gold-d); }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal-h { text-align: center; font-size: 15px; font-weight: 800; color: var(--sub); padding: 4px 0; }
+.cal-h.sun { color: var(--red); } .cal-h.sat { color: var(--blue); }
+.cal-c { position: relative; min-height: 86px; background: #fffaf0; border-radius: 12px; padding: 4px; text-align: left; border: 2px solid var(--line); display: flex; flex-direction: column; }
+.cal-c.blank { background: transparent; border-color: transparent; }
+.cal-c.has { background: #fff3c4; border-color: #f3d27a; }
+.cal-c.today { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
+.cal-d { font-size: 15px; font-weight: 800; }
+.cal-i { font-size: 18px; line-height: 1.2; flex: 1; word-break: break-all; }
+.cal-p { font-size: 18px; font-weight: 900; color: var(--green-d); text-align: right; }
+.cal-w { position: absolute; top: 2px; right: 4px; font-size: 14px; }
+@media (max-width: 600px) { .cal-c { min-height: 64px; } .cal-i { font-size: 14px; } .cal-p { font-size: 15px; } }
+
 .toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); background: #3a2f1ee6; color: #fff; border-radius: 999px; padding: 14px 26px; font-size: 20px; font-weight: 700; z-index: 20; animation: fade .2s; max-width: 92%; text-align: center; }
 @keyframes fade { from { opacity: 0; } }
 .confetti { position: fixed; top: -40px; font-size: 34px; animation: fall linear forwards; pointer-events: none; z-index: 30; }

@@ -2,7 +2,7 @@
   'use strict';
 
   // 🔴 版を あげるときは sw.js の CACHE（kids-points-v◯）と いっしょに かえる
-  var VERSION = 'v2';
+  var VERSION = 'v3';
   var app = document.getElementById('app');
   var KEY = 'pc-data';
 
@@ -42,7 +42,6 @@
   }
   function screen(nodes) { app.innerHTML = ''; nodes.forEach(function (n) { if (n) app.appendChild(n); }); window.scrollTo(0, 0); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-  function when(t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2); }
   function toast(msg) {
     var t = h('div', { class: 'toast', text: msg });
     document.body.appendChild(t);
@@ -93,13 +92,16 @@
       })),
       pending.length ? h('div', { class: 'panel' }, [
         h('h2', { text: '⏳ おうちのひとの OK まち' }),
-        h('div', { class: 'list' }, pending.map(entryRow)),
-        h('p', { class: 'note', style: 'margin:8px 0 0', text: 'おうちのひとに「みて！」って いってね' }),
+        h('div', { class: 'list' }, pending.map(function (e) { return entryRow(e, { cancel: home }); })),
+        h('p', { class: 'note', style: 'margin:8px 0 0', text: 'おうちのひとに「みて！」って いってね。まちがえたら「とりけす」' }),
       ]) : null,
       h('div', { class: 'panel' }, [
         h('h2', { text: '📒 さいきんの きろく' }),
-        recent.length ? h('div', { class: 'list' }, recent.map(entryRow)) : h('div', { class: 'empty', text: 'まだ ないよ。おてつだいや しゅくだいを したら ボタンを おしてね' }),
-        D.entries.length > 5 ? h('div', { style: 'text-align:center;margin-top:10px' }, [h('button', { class: 'btn sm', text: 'ぜんぶ みる', onclick: historyScreen })]) : null,
+        recent.length ? h('div', { class: 'list' }, recent.map(function (e) { return entryRow(e); })) : h('div', { class: 'empty', text: 'まだ ないよ。おてつだいや しゅくだいを したら ボタンを おしてね' }),
+        h('div', { class: 'btns', style: 'justify-content:center;margin-top:12px' }, [
+          h('button', { class: 'btn sm go', text: '📅 カレンダー', onclick: function () { calendarScreen(home); } }),
+          D.entries.length > 5 ? h('button', { class: 'btn sm', text: 'ぜんぶ みる', onclick: historyScreen }) : null,
+        ]),
       ]),
       versionNote(),
     ]);
@@ -116,14 +118,37 @@
       ]),
     ]);
   }
-  function entryRow(e) {
+  // opt.cancel: こどもが OK まちを とりけす／opt.del: おうちのひとが けす
+  function entryRow(e, opt) {
+    opt = opt || {};
     var cls = e.status === 'wait' ? 'wait' : e.status === 'ng' ? 'ng' : e.pts < 0 ? 'minus' : 'plus';
     var st = e.status === 'wait' ? '⏳ OK まち' : e.status === 'ng' ? 'こんかいは なし' : '';
     return h('div', { class: 'row' }, [
       h('div', { class: 'ic', text: e.icon }),
-      h('div', { class: 'tx', html: esc(e.name) + '<small>' + when(e.t) + (st ? '　' + st : '') + (e.memo ? '　' + esc(e.memo) : '') + '</small>' }),
+      h('div', { class: 'tx', html: esc(e.name) + '<small>' + dayLabel(dayOf(e)) + (st ? '　' + st : '') + '</small>' }),
       h('div', { class: 'pt ' + cls, text: (e.pts > 0 ? '+' : '') + e.pts }),
+      opt.cancel && e.status === 'wait' ? h('button', { class: 'btn sm', text: 'とりけす', onclick: function () {
+        if (!confirm('「' + e.name + '」を とりけす？')) return;
+        removeEntry(e); opt.cancel();
+      } }) : null,
+      opt.del ? h('button', { class: 'btn sm ng', text: '🗑️', onclick: function () {
+        var msg = e.status === 'ok' ? '「' + e.name + '」を けしますか？\nポイントが ' + (e.pts > 0 ? e.pts + ' へります' : -e.pts + ' もどります') + '。' : '「' + e.name + '」を けしますか？';
+        if (!confirm(msg)) return;
+        removeEntry(e); opt.del();
+      } }) : null,
     ]);
+  }
+  function removeEntry(e) { D.entries = D.entries.filter(function (x) { return x !== e; }); save(); }
+
+  // ---------- ひづけ ----------
+  var WD = ['にち', 'げつ', 'か', 'すい', 'もく', 'きん', 'ど'];
+  function ymd(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function parseYmd(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function daysAgo(n) { var d = new Date(); d.setDate(d.getDate() - n); return ymd(d); }
+  function dayOf(e) { return e.day || ymd(new Date(e.t)); }
+  function dayLabel(s) {
+    var d = parseYmd(s), base = s === daysAgo(0) ? 'きょう' : s === daysAgo(1) ? 'きのう' : s === daysAgo(2) ? 'おととい' : '';
+    return (base ? base + ' ' : '') + (d.getMonth() + 1) + '/' + d.getDate() + '（' + WD[d.getDay()] + '）';
   }
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
@@ -139,8 +164,28 @@
     }
     var info = h('div', { style: 'font-size:22px;margin-bottom:12px' });
     function upd() { info.innerHTML = '<b style="font-size:32px;color:var(--gold-d)">+' + actPts(a, pick) + '</b> ポイント'; }
+    // いつ やった？（きょう・きのう・おととい・ほかの ひ）
+    var day = daysAgo(0);
+    var dayChoices = h('div', { class: 'choices days' });
+    var other = h('input', { type: 'date', class: 'datein', max: daysAgo(0) });
+    other.addEventListener('change', function () { if (other.value && other.value <= daysAgo(0)) { day = other.value; drawDays(); } });
+    function drawDays() {
+      dayChoices.innerHTML = '';
+      [['きょう', 0], ['きのう', 1], ['おととい', 2]].forEach(function (x) {
+        var v = daysAgo(x[1]);
+        dayChoices.appendChild(h('button', { class: 'choice' + (day === v ? ' on' : ''), html: x[0] + '<br><small>' + dayLabel(v).replace(/^\S+ /, '') + '</small>', onclick: function () { day = v; drawDays(); } }));
+      });
+      var isOther = [0, 1, 2].every(function (n) { return day !== daysAgo(n); });
+      var ob = h('button', { class: 'choice' + (isOther ? ' on' : ''), html: '📅 ほかの ひ' + (isOther ? '<br><small>' + dayLabel(day) + '</small>' : ''), onclick: function () {
+        if (other.showPicker) { try { other.showPicker(); return; } catch (e) {} }
+        other.focus(); other.click();
+      } });
+      dayChoices.appendChild(ob);
+    }
     var m = modal([
       h('div', { class: 'big', text: a.icon }),
+      h('div', { class: 'q', text: 'いつ やった？' }),
+      dayChoices, other,
       h('div', { class: 'q', text: a.per ? 'なんぷん やった？' : 'なんかい やった？' }),
       choices, info,
       h('div', { class: 'btns', style: 'justify-content:center' }, [
@@ -148,13 +193,62 @@
         h('button', { class: 'btn go', text: '📮 おくる！', onclick: function () {
           var pts = actPts(a, pick);
           if (pts <= 0) return;
-          D.entries.push({ id: uid(), t: Date.now(), kind: 'act', act: a.id, icon: a.icon, name: a.name + '（' + pick + a.unit + '）', pts: pts, status: 'wait' });
+          D.entries.push({ id: uid(), t: Date.now(), day: day, kind: 'act', act: a.id, icon: a.icon, name: a.name + '（' + pick + a.unit + '）', pts: pts, status: 'wait' });
           save(); m.close(); home();
           toast('おくったよ！ おうちのひとに OK を もらってね');
         } }),
       ]),
     ]);
-    draw(); upd();
+    draw(); upd(); drawDays();
+  }
+
+  // ---------- カレンダー ----------
+  function calendarScreen(back, y, mo) {
+    var now = new Date();
+    if (y == null) { y = now.getFullYear(); mo = now.getMonth(); }
+    var first = new Date(y, mo, 1), last = new Date(y, mo + 1, 0);
+    var byDay = {};
+    D.entries.forEach(function (e) { var k = dayOf(e); (byDay[k] = byDay[k] || []).push(e); });
+    var grid = h('div', { class: 'cal' });
+    WD.forEach(function (w, i) { grid.appendChild(h('div', { class: 'cal-h' + (i === 0 ? ' sun' : i === 6 ? ' sat' : ''), text: w })); });
+    for (var b = 0; b < first.getDay(); b++) grid.appendChild(h('div', { class: 'cal-c blank' }));
+    var monthSum = 0;
+    for (var d = 1; d <= last.getDate(); d++) {
+      var key = ymd(new Date(y, mo, d)), es = byDay[key] || [];
+      var got = es.filter(function (e) { return e.status === 'ok' && e.pts > 0; });
+      var sum = got.reduce(function (s, e) { return s + e.pts; }, 0);
+      var waiting = es.some(function (e) { return e.status === 'wait'; });
+      monthSum += sum;
+      var icons = [];
+      es.forEach(function (e) { if (e.status !== 'ng' && icons.indexOf(e.icon) < 0) icons.push(e.icon); });
+      var cell = h('button', { class: 'cal-c' + (key === ymd(now) ? ' today' : '') + (sum ? ' has' : ''), onclick: (function (k, list) { return function () { dayDetail(k, list); }; })(key, es) }, [
+        h('div', { class: 'cal-d', text: String(d) }),
+        h('div', { class: 'cal-i', text: icons.slice(0, 3).join('') }),
+        sum ? h('div', { class: 'cal-p', text: '+' + sum }) : null,
+        waiting ? h('div', { class: 'cal-w', text: '⏳' }) : null,
+      ]);
+      grid.appendChild(cell);
+    }
+    var prev = new Date(y, mo - 1, 1), next = new Date(y, mo + 1, 1);
+    screen([
+      h('div', { class: 'top' }, [h('button', { class: 'pill', text: '← もどる', onclick: back }), h('h1', { text: '📅 カレンダー' })]),
+      h('div', { class: 'panel' }, [
+        h('div', { class: 'cal-nav' }, [
+          h('button', { class: 'btn sm', text: '◀', onclick: function () { calendarScreen(back, prev.getFullYear(), prev.getMonth()); } }),
+          h('div', { class: 'cal-m', html: y + 'ねん ' + (mo + 1) + 'がつ<br><small>この つき +' + monthSum + ' ポイント</small>' }),
+          h('button', { class: 'btn sm', text: '▶', disabled: next > now ? 'disabled' : false, onclick: function () { calendarScreen(back, next.getFullYear(), next.getMonth()); } }),
+        ]),
+        grid,
+        h('p', { class: 'note', style: 'margin-bottom:0', text: 'ひにちを おすと、その ひに やったことが みられるよ' }),
+      ]),
+    ]);
+  }
+  function dayDetail(key, list) {
+    var m = modal([
+      h('div', { class: 'q', text: dayLabel(key) }),
+      list.length ? h('div', { class: 'list', style: 'text-align:left' }, list.map(function (e) { return entryRow(e); })) : h('div', { class: 'empty', text: 'この ひは なにも ないよ' }),
+      h('button', { class: 'btn go wide', style: 'margin-top:14px', text: 'とじる', onclick: function () { m.close(); } }),
+    ]);
   }
 
   // しょうにんされた ポイントを、つぎに みたとき おいわい する
@@ -175,7 +269,16 @@
     var all = D.entries.slice().reverse();
     screen([
       h('div', { class: 'top' }, [h('button', { class: 'pill', text: '← もどる', onclick: home }), h('h1', { text: '📒 ぜんぶの きろく' })]),
-      h('div', { class: 'panel' }, [all.length ? h('div', { class: 'list' }, all.map(entryRow)) : h('div', { class: 'empty', text: 'まだ ないよ' })]),
+      h('div', { class: 'panel' }, [all.length ? h('div', { class: 'list' }, all.map(function (e) { return entryRow(e, { cancel: historyScreen }); })) : h('div', { class: 'empty', text: 'まだ ないよ' })]),
+    ]);
+  }
+  // おうちのひと：きろくを けす
+  function parentHistory() {
+    var all = D.entries.slice().reverse();
+    screen([
+      h('div', { class: 'top' }, [h('button', { class: 'pill', text: '← もどる', onclick: parentHome }), h('h1', { text: '📒 きろくを なおす' })]),
+      h('p', { class: 'note', style: 'margin-top:0', text: '🗑️ で けせます。OK ずみの きろくを けすと、ポイントも かわります。' }),
+      h('div', { class: 'panel' }, [all.length ? h('div', { class: 'list' }, all.map(function (e) { return entryRow(e, { del: parentHistory }); })) : h('div', { class: 'empty', text: 'きろくは ありません' })]),
     ]);
   }
 
@@ -244,7 +347,7 @@
         pending.length ? h('div', { class: 'list' }, pending.map(function (e) {
           return h('div', { class: 'row' }, [
             h('div', { class: 'ic', text: e.icon }),
-            h('div', { class: 'tx', html: esc(e.name) + '<small>' + when(e.t) + '</small>' }),
+            h('div', { class: 'tx', html: esc(e.name) + '<small>やった ひ: ' + dayLabel(dayOf(e)) + '</small>' }),
             h('div', { class: 'pt wait', text: '+' + e.pts }),
             h('button', { class: 'btn sm ok', text: 'OK', onclick: function () { decide(e, 'ok'); } }),
             h('button', { class: 'btn sm ng', text: 'なし', onclick: function () { decide(e, 'ng'); } }),
@@ -276,6 +379,8 @@
       h('div', { class: 'panel' }, [
         h('h2', { text: '⚙️ せってい' }),
         h('div', { class: 'btns' }, [
+          h('button', { class: 'btn sm', text: '📒 きろくを なおす', onclick: parentHistory }),
+          h('button', { class: 'btn sm', text: '📅 カレンダー', onclick: function () { calendarScreen(parentHome); } }),
           h('button', { class: 'btn sm', text: 'ポイントの もらえかた', onclick: editActs }),
           h('button', { class: 'btn sm', text: 'ごほうび', onclick: editRewards }),
           h('button', { class: 'btn sm', text: 'あんしょうばんごう', onclick: function () { setupPin(parentHome); } }),
