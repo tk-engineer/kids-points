@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ポイントちょきん">
+<meta name="theme-color" content="#ffd66b">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>ポイントちょきん</title>
+<style>
+:root {
+  --bg1: #fff1c9;
+  --bg2: #fffaf0;
+  --ink: #3a2f1e;
+  --sub: #7b6a52;
+  --card: #ffffff;
+  --line: #f0e2c4;
+  --gold: #f5b300;
+  --gold-d: #c98f00;
+  --green: #2bb673;
+  --green-d: #1d8a55;
+  --red: #ef5350;
+  --blue: #3d8bfd;
+  --chip: #fff6e0;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--bg1), var(--bg2) 45%);
+  -webkit-user-select: none; user-select: none;
+  touch-action: manipulation;
+}
+#app {
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  max-width: 900px; margin: 0 auto;
+}
+button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+input { font: inherit; color: inherit; -webkit-user-select: text; user-select: text; }
+
+.top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; min-height: 52px; }
+.top h1 { font-size: 28px; margin: 0; flex: 1; }
+.pill { background: var(--card); border-radius: 999px; padding: 10px 18px; font-size: 20px; font-weight: 700; box-shadow: 0 3px 0 var(--line); }
+
+.panel { background: var(--card); border-radius: 24px; padding: 20px; box-shadow: 0 6px 0 var(--line); margin-bottom: 16px; }
+.panel h2 { margin: 0 0 12px; font-size: 22px; }
+
+.total { text-align: center; }
+.total .lbl { font-size: 22px; color: var(--sub); font-weight: 700; }
+.total .num { font-size: 96px; font-weight: 900; line-height: 1.05; color: var(--gold-d); }
+.total .num small { font-size: 32px; margin-left: 6px; color: var(--ink); }
+.total .wait { font-size: 20px; color: var(--blue); font-weight: 700; margin-top: 4px; }
+
+.goal { display: flex; gap: 14px; align-items: center; }
+.goal .ic { font-size: 56px; }
+.goal .body { flex: 1; min-width: 0; }
+.goal .nm { font-size: 22px; font-weight: 800; }
+.bar { height: 22px; background: #f3ead6; border-radius: 11px; overflow: hidden; margin: 8px 0 4px; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcf3f, #ff9f1c); border-radius: 11px; transition: width .4s; }
+.goal .rest { font-size: 18px; color: var(--sub); }
+.goal .rest b { color: var(--gold-d); font-size: 22px; }
+
+.acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px; }
+.act { background: var(--card); border-radius: 26px; padding: 22px 14px; text-align: center; box-shadow: 0 7px 0 var(--line); border-top: 8px solid var(--gold); }
+.act:active { transform: translateY(4px); box-shadow: 0 3px 0 var(--line); }
+.act .ic { font-size: 64px; line-height: 1.1; }
+.act .nm { font-size: 26px; font-weight: 800; margin-top: 6px; }
+.act .ds { font-size: 17px; color: var(--sub); margin-top: 4px; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; align-items: center; gap: 10px; font-size: 19px; padding: 8px 4px; border-bottom: 1px dashed var(--line); }
+.row:last-child { border-bottom: 0; }
+.row .ic { font-size: 28px; }
+.row .tx { flex: 1; min-width: 0; }
+.row .tx small { display: block; color: var(--sub); font-size: 14px; }
+.row .pt { font-weight: 900; font-size: 22px; white-space: nowrap; }
+.row .pt.plus { color: var(--green-d); }
+.row .pt.minus { color: var(--red); }
+.row .pt.wait { color: var(--blue); }
+.row .pt.ng { color: #aaa; text-decoration: line-through; }
+.empty { color: var(--sub); font-size: 18px; text-align: center; padding: 8px; }
+
+.btn { display: inline-block; border-radius: 16px; padding: 14px 20px; font-size: 22px; font-weight: 800; background: var(--chip); box-shadow: 0 4px 0 var(--line); }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.btn.go { background: var(--gold); color: #fff; box-shadow: 0 5px 0 var(--gold-d); }
+.btn.ok { background: var(--green); color: #fff; box-shadow: 0 4px 0 var(--green-d); }
+.btn.ng { background: #fde3e2; color: var(--red); }
+.btn.sm { font-size: 17px; padding: 8px 14px; border-radius: 12px; }
+.btn.wide { display: block; width: 100%; }
+.btn[disabled] { opacity: .4; }
+.btns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* まど */
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0004; display: flex; align-items: center; justify-content: center; z-index: 10; padding: 16px; }
+.modal .card { background: #fff; border-radius: 28px; padding: 24px; width: 100%; max-width: 520px; text-align: center; box-shadow: 0 10px 30px #0003; max-height: 92vh; overflow: auto; }
+.modal .q { font-size: 28px; font-weight: 800; margin-bottom: 14px; line-height: 1.4; }
+.modal .big { font-size: 80px; line-height: 1.1; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0 16px; }
+.choice { background: var(--chip); border-radius: 18px; padding: 16px 8px; font-size: 26px; font-weight: 800; box-shadow: 0 4px 0 var(--line); border: 3px solid transparent; }
+.choice.on { border-color: var(--gold); background: #fff3c4; }
+
+/* あんしょうばんごう */
+.dots { display: flex; justify-content: center; gap: 14px; margin: 6px 0 14px; }
+.dots i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--gold-d); }
+.dots i.on { background: var(--gold-d); }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 340px; margin: 0 auto; }
+.key { background: var(--chip); border-radius: 16px; font-size: 34px; font-weight: 800; padding: 12px 0; box-shadow: 0 4px 0 var(--line); }
+.key.sub { font-size: 20px; color: var(--sub); }
+.err { color: var(--red); font-weight: 700; min-height: 1.4em; }
+
+/* せってい */
+.field { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.field input { border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 18px; background: #fffdf7; min-width: 0; }
+.field input.ic { width: 64px; text-align: center; font-size: 24px; }
+.field input.nm { flex: 1; min-width: 140px; }
+.field input.num { width: 96px; text-align: right; }
+.field label { font-size: 16px; color: var(--sub); }
+.note { color: var(--sub); font-size: 15px; text-align: center; margin-top: 12px; }
+
+.toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); background: #3a2f1ee6; color: #fff; border-radius: 999px; padding: 14px 26px; font-size: 20px; font-weight: 700; z-index: 20; animation: fade .2s; max-width: 92%; text-align: center; }
+@keyframes fade { from { opacity: 0; } }
+.confetti { position: fixed; top: -40px; font-size: 34px; animation: fall linear forwards; pointer-events: none; z-index: 30; }
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+
+@media (max-width: 600px) {
+  .total .num { font-size: 72px; }
+  .act .nm { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (hadController && !reloaded) { reloaded = true; location.reload(); }
+  });
+  navigator.serviceWorker.register('sw.js').then(function (reg) {
+    // ホーム画面の アプリは 「つづき」から はじまるので、まえに でてきた たびに あたらしい版を さがす
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && navigator.onLine) reg.update().catch(function () {});
+    });
+  }).catch(function () {});
+}
+</script>
+</body>
+</html>
